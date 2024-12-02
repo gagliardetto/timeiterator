@@ -47,6 +47,39 @@ func (itr *TimeIterator) Days(callback func(time.Time) bool) {
 	}
 }
 
+// Hours will iterate over the hours between the two time objects
+// that were provided when the iterator was created
+// (including the dates of start and end).
+// If the start comes after the end date, the iteration will go backwards.
+// If the date of the start and end objects is the same, the callback will be called
+// with the end time object.
+func (itr *TimeIterator) Hours(callback func(time.Time) bool) {
+	if itr.start.Equal(itr.end) {
+		// If the start and end dates are the same,
+		// execute the callback with the end time.
+		callback(itr.end)
+		return
+	}
+
+	var hourDiff int
+	var diffFunc func(*time.Time, time.Time) bool
+	if itr.start.After(itr.end) {
+		hourDiff = -1
+		diffFunc = (*time.Time).After
+	} else {
+		hourDiff = 1
+		diffFunc = (*time.Time).Before
+	}
+
+	delta := time.Hour * time.Duration(hourDiff)
+	for h := itr.start; diffFunc(&h, itr.end) || h.Equal(itr.end); h = h.Add(delta) {
+		doContinue := callback(h)
+		if !doContinue {
+			return
+		}
+	}
+}
+
 func dateEqual(date1, date2 time.Time) bool {
 	y1, m1, d1 := date1.Date()
 	y2, m2, d2 := date2.Date()
